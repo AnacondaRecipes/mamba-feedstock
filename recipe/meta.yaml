@@ -101,6 +101,7 @@ outputs:
         - scikit-build
         - pybind11
         - pybind11-abi
+        - spdlog {{ spdlog }}
         - fmt {{ fmt }}
         - {{ pin_subpackage('libmamba', exact=True) }}
       run:
