@@ -42,7 +42,7 @@ outputs:
         - reproc {{ reproc }}
         - spdlog {{ spdlog }}
         - yaml-cpp {{ yaml_cpp }}
-        - fmt {{ fmt }}
+        - fmt 9.1.0 # requires fmt <11
         - winreg 4.1.2 # [win]
         - zstd {{ zstd }}
         - bzip2 {{ bzip2 }}
@@ -102,7 +102,7 @@ outputs:
         - pybind11
         - pybind11-abi
         - spdlog {{ spdlog }}
-        - fmt {{ fmt }}
+        - fmt 9.1.0 # requires fmt <11
         - {{ pin_subpackage('libmamba', exact=True) }}
       run:
         - python
