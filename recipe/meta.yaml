@@ -28,6 +28,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('cxx') }}
+        - {{ stdlib('c') }}
         - cmake
         - ninja-base
         - pkg-config
@@ -93,6 +94,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('cxx') }}
+        - {{ stdlib('c') }}
         - cmake
         - ninja-base
       host:
