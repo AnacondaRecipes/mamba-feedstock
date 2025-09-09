@@ -1,23 +1,20 @@
 {% set name = "mamba" %}
-{% set libmamba_version = "2.0.5" %}
-{% set libmambapy_version = "2.0.5" %}
-{% set mamba_version = "2.0.5" %}
-{% set release = "2024.12.12" %}
+{% set version = "2.3.2" %}
 
 package:
   name: mamba-split
-  version: {{ mamba_version }}
+  version: {{ version }}
 
 source:
-  url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ release }}.tar.gz
-  sha256: 4960fc5aa617310fb45e309a1bcfeae74085d70782443b1d2882de4400ac6a48
+  url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ version }}.tar.gz
+  sha256: c969d189b0263218467b9e3b8922fcad8f7023bd8b5a981edc37e0da27cf953f
 
 build:
-  number: 2
+  number: 0
 
 outputs:
   - name: libmamba
-    version: {{ libmamba_version }}
+    version: {{ version }}
     script: build_mamba.sh                       # [unix]
     script: build_mamba.bat                      # [win]
     build:
@@ -27,6 +24,7 @@ outputs:
         - spdlog
     requirements:
       build:
+        - {{ compiler('c') }}
         - {{ compiler('cxx') }}
         - {{ stdlib('c') }}
         - cmake
@@ -43,7 +41,7 @@ outputs:
         - reproc {{ reproc }}
         - spdlog {{ spdlog }}
         - yaml-cpp {{ yaml_cpp }}
-        - fmt 9.1.0 # requires fmt <11
+        - fmt {{ fmt }}
         - winreg 4.1.2 # [win]
         - zstd {{ zstd }}
         - bzip2 {{ bzip2 }}
@@ -75,13 +73,13 @@ outputs:
         - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfigVersion.cmake (exit 1)  # [win]
         - if not exist %LIBRARY_PREFIX%\bin\libmamba.dll (exit 1)                                # [win]
         - if not exist %LIBRARY_PREFIX%\lib\libmamba.lib (exit 1)                                # [win]
-        {% set libmamba_version_split = libmamba_version.split('.') %}
+        {% set libmamba_version_split = version.split('.') %}
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MAJOR {{ libmamba_version_split[0] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MINOR {{ libmamba_version_split[1] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_PATCH {{ libmamba_version_split[2] }}"  # [unix]
 
   - name: libmambapy
-    version: {{ libmambapy_version }}
+    version: {{ version }}
     script: build_mamba.sh                       # [unix]
     script: build_mamba.bat                      # [win]
     build:
@@ -101,10 +99,10 @@ outputs:
         - python
         - pip
         - scikit-build
-        - pybind11
+        - pybind11 <3.0
         - pybind11-abi
         - spdlog {{ spdlog }}
-        - fmt 9.1.0 # requires fmt <11
+        - fmt {{ fmt}}
         - {{ pin_subpackage('libmamba', exact=True) }}
       run:
         - python
@@ -116,7 +114,7 @@ outputs:
         - libmambapy.bindings
         - libmambapy.solver
       commands:
-        - python -c "import libmambapy.version; assert libmambapy.version.__version__ == '{{ libmambapy_version }}'"
+        - python -c "import libmambapy.version; assert libmambapy.version.__version__ == '{{ version }}'"
 
 about:
   home: https://github.com/mamba-org/mamba
