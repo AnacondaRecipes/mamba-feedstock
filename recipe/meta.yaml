@@ -8,6 +8,8 @@ package:
 source:
   url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ version }}.tar.gz
   sha256: c969d189b0263218467b9e3b8922fcad8f7023bd8b5a981edc37e0da27cf953f
+  patches:
+    - patches/0001-revert-use-range-in-solution.patch # [linux]
 
 build:
   number: 0
