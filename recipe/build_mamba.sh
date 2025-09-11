@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-export CXXFLAGS="${CXXFLAGS} -D_LIBCPP_DISABLE_AVAILABILITY=1"
+export CXXFLAGS="${CXXFLAGS}"
 
 if [[ $PKG_NAME == "libmamba" ]]; then
 
@@ -23,28 +23,12 @@ if [[ $PKG_NAME == "libmamba" ]]; then
     cmake --install build-lib/
 
 elif [[ $PKG_NAME == "libmambapy" ]]; then
-
-    export CMAKE_ARGS="-G Ninja ${CMAKE_ARGS}"
+    export CMAKE_ARGS="-G Ninja"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # skbuild considers that only the major version is important for the deployment target
+        # https://github.com/scikit-build/scikit-build/blob/main/skbuild%2Fconstants.py#L92-L94
+        export CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET%.*}.0"
+    fi
     "${PYTHON}" -m pip install --no-deps --no-build-isolation --config-settings="--build-type=Release" --config-settings="--generator=Ninja" -vv ./libmambapy
 
-elif [[ $PKG_NAME == "mamba" ]]; then
-
-    cmake -B build-mamba/ \
-        -G Ninja \
-        ${CMAKE_ARGS} \
-        -D CMAKE_INSTALL_PREFIX=$PREFIX  \
-        -D CMAKE_PREFIX_PATH=$PREFIX     \
-        -D CMAKE_BUILD_TYPE=Release      \
-        -D BUILD_LIBMAMBA=OFF \
-        -D BUILD_MAMBA_PACKAGE=OFF \
-        -D BUILD_LIBMAMBAPY=OFF \
-        -D BUILD_MAMBA=ON \
-        -D BUILD_MICROMAMBA=OFF \
-        -D MAMBA_WARNING_AS_ERROR=OFF
-    cmake --build build-mamba/ --parallel ${CPU_COUNT}
-    cmake --install build-mamba/
-
-    # Add symlink to condabin
-    mkdir -p "${PREFIX}/condabin"
-    ln -s "${PREFIX}/bin/mamba" "${PREFIX}/condabin/mamba"
 fi

@@ -1,31 +1,22 @@
 {% set name = "mamba" %}
-{% set libmamba_version = "2.0.5" %}
-{% set libmambapy_version = "2.0.5" %}
-{% set mamba_version = "2.0.5" %}
-{% set release = "2024.12.12" %}
-{% set build_mamba = "false" %}
+{% set version = "2.3.2" %}
 
 package:
   name: mamba-split
-  version: {{ mamba_version }}
+  version: {{ version }}
 
 source:
-  url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ release }}.tar.gz
-  sha256: 4960fc5aa617310fb45e309a1bcfeae74085d70782443b1d2882de4400ac6a48
+  url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ version }}.tar.gz
+  sha256: c969d189b0263218467b9e3b8922fcad8f7023bd8b5a981edc37e0da27cf953f
   patches:
-    - patches/0001-use-tie-instead-of-structured-binding-declaration.patch
+    - patches/0001-revert-use-range-in-solution.patch # [linux]
 
 build:
-  number: 1
-
-requirements:
-  build:
-    - patch  # [not win]
-    - m2-patch # [win]
+  number: 0
 
 outputs:
   - name: libmamba
-    version: {{ libmamba_version }}
+    version: {{ version }}
     script: build_mamba.sh                       # [unix]
     script: build_mamba.bat                      # [win]
     build:
@@ -33,42 +24,45 @@ outputs:
         - {{ pin_subpackage('libmamba', max_pin='x.x') }}
       ignore_run_exports:
         - spdlog
-        - python    # [win]
-      missing_dso_whitelist:  # [s390x]
-        - $RPATH/ld64.so.1    # [s390x] Known s390x `ld64.so` issue.
     requirements:
       build:
+        - {{ compiler('c') }}
         - {{ compiler('cxx') }}
+        - {{ stdlib('c') }}
         - cmake
         - ninja-base
+        - pkg-config
       host:
         - libsolv 0.7.30
-        - libcurl 8.4.0
+        - libcurl {{ libcurl }}
         - openssl {{ openssl }}
-        - libarchive 3.7.7
-        - nlohmann_json
-        - cpp-expected
-        - reproc-cpp >=14.2.4
-        - reproc
-        - spdlog
-        - yaml-cpp >=0.8.0
-        - fmt
-        - winreg  # [win]
+        - libarchive {{ libarchive }}
+        - nlohmann_json 3.11.2
+        - cpp-expected 1.1.0
+        - reproc-cpp {{ reproc_cpp }}
+        - reproc {{ reproc }}
+        - spdlog {{ spdlog }}
+        - yaml-cpp {{ yaml_cpp }}
+        - fmt {{ fmt }}
+        - winreg 4.1.2 # [win]
         - zstd {{ zstd }}
         - bzip2 {{ bzip2 }}
-        - cli11
-        - simdjson >=3.3.0
-        - pkg-config
+        - cli11 2.1.2
+        - simdjson {{ simdjson }}
       run:
-        - libsolv >=0.7.30,<0.8.0a0
+        - {{ pin_compatible('libsolv', max_pin='x.x') }}
+        - {{ pin_compatible('nlohmann_json', max_pin='x.x.x') }}
+        - {{ pin_compatible('cpp-expected', max_pin='x.x.x') }}
+        # through run_exports
+        - libcurl
+        - openssl
+        - libarchive
         - reproc-cpp
         - reproc
         - fmt
-        - spdlog
-        - cpp-expected
-        - nlohmann_json
+        - zstd
+        - bzip2
         - simdjson
-        - yaml-cpp
     test:
       commands:
         - test -d ${PREFIX}/include/mamba                                   # [unix]
@@ -81,13 +75,13 @@ outputs:
         - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfigVersion.cmake (exit 1)  # [win]
         - if not exist %LIBRARY_PREFIX%\bin\libmamba.dll (exit 1)                                # [win]
         - if not exist %LIBRARY_PREFIX%\lib\libmamba.lib (exit 1)                                # [win]
-        {% set libmamba_version_split = libmamba_version.split('.') %}
+        {% set libmamba_version_split = version.split('.') %}
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MAJOR {{ libmamba_version_split[0] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MINOR {{ libmamba_version_split[1] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_PATCH {{ libmamba_version_split[2] }}"  # [unix]
 
   - name: libmambapy
-    version: {{ libmambapy_version }}
+    version: {{ version }}
     script: build_mamba.sh                       # [unix]
     script: build_mamba.bat                      # [win]
     build:
@@ -97,20 +91,20 @@ outputs:
         - {{ pin_subpackage('libmambapy', max_pin='x.x') }}
       ignore_run_exports:
         - spdlog
-      missing_dso_whitelist:  # [s390x]
-        - $RPATH/ld64.so.1    # [s390x] Known s390x `ld64.so` issue.
     requirements:
       build:
         - {{ compiler('cxx') }}
+        - {{ stdlib('c') }}
         - cmake
         - ninja-base
       host:
         - python
         - pip
         - scikit-build
-        - pybind11
+        - pybind11 <3.0
         - pybind11-abi
-        - fmt
+        - spdlog {{ spdlog }}
+        - fmt {{ fmt}}
         - {{ pin_subpackage('libmamba', exact=True) }}
       run:
         - python
@@ -122,61 +116,7 @@ outputs:
         - libmambapy.bindings
         - libmambapy.solver
       commands:
-        - python -c "import libmambapy.version; assert libmambapy.version.__version__ == '{{ libmambapy_version }}'"
-
-{% if build_mamba == "true" %}
-  # we don't intend to support mamba on Anaconda's defaults, therefore
-  # we disable it, but still trying to share recipe in most parts with
-  # conda-forge.
-  - name: mamba
-    version: {{ mamba_version }}
-    script: build_mamba.sh                       # [unix]
-    script: build_mamba.bat                      # [win]
-    build:
-      skip: true  # [py<37]
-      string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
-      entry_points:
-        - mamba = mamba.mamba:main
-    requirements:
-      build:
-        - {{ compiler('cxx') }}
-        - cmake
-        - ninja
-        - vcpkg-tool      # [win]
-        - python          # [win]
-        - curl >=8.4.0    # [win]
-        - zlib            # [win]
-        - patch           # [not win]
-        - m2-patch        # [win]
-      host:
-        - python
-        - pip
-        - setuptools
-        - wheel
-        - openssl {{ openssl }}
-        - {{ pin_subpackage('libmambapy', exact=True) }}
-      run:
-        - python
-        - conda >=23.11,<24.0a0
-        - {{ pin_subpackage('libmambapy', exact=True) }}
-
-    test:
-      imports:
-        - mamba
-      requires:
-        - pip
-      commands:
-        - mamba --help
-        - if exist %PREFIX%\condabin\mamba.bat (exit 0) else (exit 1)  # [win]
-        - test -f ${PREFIX}/etc/profile.d/mamba.sh  # [linux]
-        # these tests work when run on win, but for some reason not during conda build
-        - mamba create -n test_py2 python=2.7 --dry-run  # [linux and (x86_64 or ppc64le)]
-        - mamba install xtensor xsimd -c conda-forge --dry-run  # [linux and x86_64]
-        # for some reason tqdm doesn't have a proper colorama dependency so pip check fails
-        # but that's completely unrelated to mamba
-        - python -c "import mamba._version; assert mamba._version.__version__ == '{{ mamba_version }}'"
-        - test -f ${PREFIX}/condabin/mamba  # [unix]
-{% endif %}
+        - python -c "import libmambapy.version; assert libmambapy.version.__version__ == '{{ version }}'"
 
 about:
   home: https://github.com/mamba-org/mamba
