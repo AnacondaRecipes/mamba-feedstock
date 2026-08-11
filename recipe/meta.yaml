@@ -1,5 +1,6 @@
 {% set name = "mamba" %}
-{% set version = "2.3.2" %}
+{% set version = "2.9.0" %}
+{% set libmamba_version_split = version.split('.') %}
 
 package:
   name: mamba-split
@@ -7,18 +8,18 @@ package:
 
 source:
   url: https://github.com/{{ name }}-org/{{ name }}/archive/refs/tags/{{ version }}.tar.gz
-  sha256: c969d189b0263218467b9e3b8922fcad8f7023bd8b5a981edc37e0da27cf953f
+  sha256: 57befdcc985b07f95d1a495569ac249a270c71167d111374ff08443154821e1d
   patches:
-    - patches/0001-revert-use-range-in-solution.patch # [linux]
+    - patches/0001-revert-use-range-in-solution.patch  # [linux]
 
 build:
-  number: 3
+  number: 0
 
 outputs:
   - name: libmamba
     version: {{ version }}
-    script: build_mamba.sh                       # [unix]
-    script: build_mamba.bat                      # [win]
+    script: build_mamba.sh  # [unix]
+    script: build_mamba.bat  # [win]
     build:
       run_exports:
         - {{ pin_subpackage('libmamba', max_pin='x.x') }}
@@ -44,7 +45,7 @@ outputs:
         - spdlog {{ spdlog }}
         - yaml-cpp {{ yaml_cpp }}
         - fmt {{ fmt }}
-        - winreg 4.1.2 # [win]
+        - winreg 4.1.2  # [win]
         - zstd {{ zstd }}
         - bzip2 {{ bzip2 }}
         - cli11 2.1.2
@@ -65,25 +66,23 @@ outputs:
         - simdjson
     test:
       commands:
-        - test -d ${PREFIX}/include/mamba                                   # [unix]
-        - test -f ${PREFIX}/include/mamba/version.hpp                       # [unix]
-        - test -f ${PREFIX}/lib/cmake/libmamba/libmambaConfig.cmake         # [unix]
+        - test -d ${PREFIX}/include/mamba  # [unix]
+        - test -f ${PREFIX}/include/mamba/version.hpp  # [unix]
+        - test -f ${PREFIX}/lib/cmake/libmamba/libmambaConfig.cmake  # [unix]
         - test -f ${PREFIX}/lib/cmake/libmamba/libmambaConfigVersion.cmake  # [unix]
-        - test -e ${PREFIX}/lib/libmamba${SHLIB_EXT}                        # [unix]
-        - if not exist %LIBRARY_PREFIX%\include\mamba\version.hpp (exit 1)                       # [win]
-        - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfig.cmake (exit 1)         # [win]
+        - test -e ${PREFIX}/lib/libmamba${SHLIB_EXT}  # [unix]
+        - if not exist %LIBRARY_PREFIX%\include\mamba\version.hpp (exit 1)  # [win]
+        - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfig.cmake (exit 1)  # [win]
         - if not exist %LIBRARY_PREFIX%\lib\cmake\libmamba\libmambaConfigVersion.cmake (exit 1)  # [win]
-        - if not exist %LIBRARY_PREFIX%\bin\libmamba.dll (exit 1)                                # [win]
-        - if not exist %LIBRARY_PREFIX%\lib\libmamba.lib (exit 1)                                # [win]
-        {% set libmamba_version_split = version.split('.') %}
+        - if not exist %LIBRARY_PREFIX%\bin\libmamba.dll (exit 1)  # [win]
+        - if not exist %LIBRARY_PREFIX%\lib\libmamba.lib (exit 1)  # [win]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MAJOR {{ libmamba_version_split[0] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_MINOR {{ libmamba_version_split[1] }}"  # [unix]
         - cat $PREFIX/include/mamba/version.hpp | grep "LIBMAMBA_VERSION_PATCH {{ libmamba_version_split[2] }}"  # [unix]
-
   - name: libmambapy
     version: {{ version }}
-    script: build_mamba.sh                       # [unix]
-    script: build_mamba.bat                      # [win]
+    script: build_mamba.sh  # [unix]
+    script: build_mamba.bat  # [win]
     build:
       skip: true  # [py<37]
       string: py{{ CONDA_PY }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
@@ -109,7 +108,6 @@ outputs:
       run:
         - python
         - {{ pin_subpackage('libmamba', exact=True) }}
-
     test:
       imports:
         - libmambapy
