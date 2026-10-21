@@ -12,7 +12,7 @@ source:
     - patches/0001-revert-use-range-in-solution.patch # [linux]
 
 build:
-  number: 5
+  number: 6
 
 outputs:
   - name: libmamba
@@ -63,6 +63,8 @@ outputs:
         - zstd
         - bzip2
         - simdjson
+      run_constrained:
+        - ca-certificates >=2026.10.20
     test:
       commands:
         - test -d ${PREFIX}/include/mamba                                   # [unix]
