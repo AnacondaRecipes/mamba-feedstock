@@ -113,12 +113,15 @@ outputs:
         - {{ pin_subpackage('libmamba', exact=True) }}
 
     test:
+      downstreams:
+        - conda-libmamba-solver
       imports:
         - libmambapy
         - libmambapy.bindings
         - libmambapy.solver
       commands:
         - python -c "import libmambapy.version; assert libmambapy.version.__version__ == '{{ version }}'"
+        - python -c "from libmambapy.specs import PackageInfo; assert PackageInfo(signatures='').signatures == ''"
 
 about:
   home: https://github.com/mamba-org/mamba
